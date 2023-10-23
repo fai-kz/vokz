@@ -23,6 +23,11 @@ class Simulation(object):
     data_dir = None
     authors = None
     params = dict()    
+    def from_dict(self, d):
+        self.sim_type = d["sim_type"]
+        self.data_dir = d["data_dir"]
+        self.authors = d["authors"]
+        self.params = d["params"]
 
 
 class Client(object):
@@ -66,7 +71,8 @@ class Client(object):
             }
         }
         self.socket.send_string(json.dumps(request))
-        return json.loads(self.socket.recv_string())
+        res = json.loads(self.socket.recv_string())
+        return [ Simulation().from_dict(d) for d in res ]
 
 
 
