@@ -17,7 +17,7 @@ status = client.get_submissions()
 ### Access to simulation data
 ```python
 result = client.find_sim(sim_type="nbody")
-# returns tuple of `Simulation` objects
+# returns list of `Simulation` objects
 ```
 The method `find_sim` accepts the following parameters for `nbody`
 type:
