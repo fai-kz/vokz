@@ -1,10 +1,11 @@
 import zmq
 import json
 
-SERVER_PUBLIC_KEY = b"82M+$O0^qkJRj8/nWi[cma-4916*miCcALuf2-&e"
+
+SERVER_PUBLIC_KEY = b"R04Mg/5eW*?!hqxO=bQ)tDyCsqN@vLNfwK(Yj*sL"
 
 
-class voError(Exception):
+class VOKZError(Exception):
     pass
 
 
@@ -13,11 +14,19 @@ def vo_error(func):
         try:
             return func(self, *args, **kwargs)
         except zmq.error.ZMQError:
-            raise ConnectionError("Failed to connect to VO server")
+            raise VOKZError("Failed to connect to VO server")
     return wrapper
 
 
+class Simulation(object):
+    sim_type = None
+    data_dir = None
+    authors = None
+    params = dict()    
+
+
 class Client(object):
+
     def __init__(self, api_key):
         self.client_public_key = api_key[:40].encode('ascii')
         self.client_secret_key = api_key[40:].encode('ascii')
@@ -27,22 +36,37 @@ class Client(object):
         self.socket.curve_publickey = self.client_public_key
         self.socket.curve_serverkey = SERVER_PUBLIC_KEY
         try:
-            self.socket.connect("tcp://vo.fai.kz:5555")
+            self.socket.connect("tcp://vo.fai.kz:5556")
         except zmq.error.ZMQError:
-            raise ConnectionError("Cannot connect to VO server")
+            raise VOKZError("Cannot connect to VO-KZ server")
+
 
     def __del__(self):
         self.socket.close()
         self.context.term()
 
+
     @vo_error
-    def get_submissions(self):
+    def ping(self):
         request = {
-            "type": "submissions",
+            "type": "ping",
         }
         self.socket.send_string(json.dumps(request))
         return json.loads(self.socket.recv_string())
     
+
+    @vo_error
+    def find_sim(self, sim_type: str, **kwargs):
+        request = {
+            "type": "find_sim",
+            "data": {
+                "sim_type": sim_type,
+                "authors": kwargs.get("authors", None),
+                "params": kwargs,
+            }
+        }
+        self.socket.send_string(json.dumps(request))
+        return json.loads(self.socket.recv_string())
 
 
 
